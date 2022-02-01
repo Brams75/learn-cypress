@@ -1,7 +1,8 @@
+import { buildUser } from "../support/generate";
+
 describe("registration", () => {
   it("should register a new user", () => {
-    // Création d'un utilisateur en brut
-    const user = { username: "Abram", password: "Abram" };
+    const user = buildUser();
     // On visite le site
     cy.visit("/");
 
@@ -19,12 +20,19 @@ describe("registration", () => {
 
     cy.get("#password-input").should("have.text", "");
     cy.findAllByLabelText(/password/i).type(user.password);
-    cy.get("#username-input").should("have.value", `${user.password}`);
+    cy.get("#password-input").should("have.value", `${user.password}`);
 
     cy.findByText(/submit/i).click();
 
     // On vérifie que nous sommes bien redirigés vers la page d'accueil
     cy.url().should("eq", `${Cypress.config().baseUrl}/`);
     cy.window().its("localStorage.token").should("be.a", "string");
+  });
+
+  it("should show an error message if there's an error registering", () => {
+    cy.intercept("POST", "/register", { statusCode: 500, body: {} });
+    cy.visit("/register");
+    cy.findByText(/submit/i).click();
+    cy.findByText(/error.*try again/i);
   });
 });
